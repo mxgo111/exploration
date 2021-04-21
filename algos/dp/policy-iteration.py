@@ -26,7 +26,7 @@ class PolicyIteration:
         policy = np.ones((self.num_states, self.num_actions)) / self.num_actions
         return policy
 
-    # updates values for one state
+    # Updates values for one state
     def update_values(self, state):
         v = 0.0
         for action, action_prob in enumerate(self.policy[state]):
@@ -34,55 +34,15 @@ class PolicyIteration:
                 v += action_prob * state_prob * (reward + self.gamma * self.V[next_state])
         self.V[state] = v
 
-    # def evaluate(V, action_values, env, gamma, state):
-    #     for action in range(env.nA):
-    #         for prob, next_state, reward, terminated in env.P[state][action]:
-    #             action_values[action] += prob * (reward + gamma * V[next_state])
-    #     return action_values
-    #
-    # def lookahead(env, state, V, gamma):
-    #     action_values = np.zeros(env.nA)
-    #     return evaluate(V, action_values, env, gamma, state)
-
-    def update_best_actions(self, state):
+    # finds the best action given value function
+    def update_action_values(self, state):
         action_values = np.zeros(self.num_actions)
         for action in range(self.num_actions):
             for prob, next_state, reward, terminated in self.env.P[state][action]:
                 action_values[action] = prob * (reward + self.gamma * self.V[next_state])
         return action_values
 
-    # Policy Evaluation
-    # def eval_policy(gamma=1.0, theta=1e-9, terms=1e9):
-    #     V = np.zeros(self.env.nS)
-    #     delta = 0
-    #     for i in range(int(terms)):
-    #         for state in range(env.nS):
-    #             act(V, env, gamma, policy, state, v=0.0)
-    #         v = np.sum(V)
-    #         if v - delta < theta:
-    #             return V
-    #         else:
-    #             delta = v
-    #     return V
-
-    # Policy Improvement
-    # def policy_improvement(env, gamma=1.0, terms=1e9):
-    #     policy = np.ones([env.nS, env.nA]) / env.nA
-    #     evals = 1
-    #     for i in range(int(terms)):
-    #         stable = True
-    #         V = eval_policy(policy, env, gamma=gamma)
-    #         for state in range(env.nS):
-    #             current_action = np.argmax(policy[state])
-    #             action_value = lookahead(env, state, V, gamma)
-    #             best_action = np.argmax(action_value)
-    #             if current_action != best_action:
-    #                 stable = False
-    #                 policy[state] = np.eye(env.nA)[best_action]
-    #             evals += 1
-    #             if stable:
-    #                 return policy, V
-
+    # evaluates policy
     def policy_evaluation(self, theta=1e-9, terms=1e6):
         self.V = np.zeros(self.num_states)
         # ensures that we stop even if we don't converge
@@ -94,28 +54,27 @@ class PolicyIteration:
             # deviates a little from Sutton-Barto
             v = np.sum(self.V)
             if v - prev_sum < theta:
-                print("Convergence of V")
                 return
             else:
                 prev_sum = v
 
+    # improves policy
     def policy_improvement(self, terms=1e9):
-        policy = np.ones([env.nS, env.nA]) / env.nA
         evals = 1
         # ensures that we stop even if we don't converge
         for i in range(int(terms)):
             stable = True
             self.policy_evaluation()
             for state in range(self.num_states):
+                # find current action in a state and compare with best action
                 current_action = np.argmax(self.policy[state])
-                action_values = self.update_best_actions(state)
+                action_values = self.update_action_values(state)
                 best_action = np.argmax(action_values)
 
                 # actions have changed -> unstable
                 if current_action != best_action:
                     stable = False
-                    self.policy[state] = np.zeros(self.num_actions)
-                    self.policy[state][best_action] = 1
+                    self.policy[state] = np.eye(self.num_actions)[best_action]
                 evals += 1
 
             if stable:
@@ -127,35 +86,26 @@ class PolicyIteration:
         finished = False
 
         while not finished:
-            s = self.env.env.s
+            # display current state
             if display:
                 clear_output(True)
                 self.env.render()
                 sleep(1)
 
-            timestep = []
-            timestep.append(s)
-            # n = random.uniform(0, sum(policy[s]))
-            # top_range = 0
-            # action = 0
-            # for i, prob in enumerate(policy[s]):
-            #     top_range += prob
-            #     if n < top_range:
-            #         action = i
-            #         break
+            # find next state
+            s = self.env.env.s
             action = np.random.choice(np.arange(self.num_actions), p=self.policy[s])
             state, reward, finished, info = self.env.step(action)
 
-            timestep.append(action)
-            timestep.append(reward)
+            episodes.append([s, action, reward])
 
-            episodes.append(timestep)
-
+        # display end result
         if display:
             clear_output(True)
             self.env.render()
         return episodes
 
+    # averages rewards over a number of episodes
     def compute_episode_rewards(self, num_episodes=100, step_limit=1000):
         total_rewards = np.zeros(num_episodes)
         for episode in range(num_episodes):
@@ -171,21 +121,16 @@ class PolicyIteration:
 
         return np.mean(total_rewards), np.var(total_rewards)
 
+    # prints reward information
     def print_rewards_info(self, num_episodes=100, step_limit=1000):
         mean, var = self.compute_episode_rewards(num_episodes=num_episodes, step_limit=step_limit)
         print(f"Mean of Episode Rewards: {mean}, Variance of Episode Rewards: {var}")
 
 if __name__ == "__main__":
-    env = gym.make('FrozenLake-v0')
+    env = gym.make('FrozenLake-v0', is_slippery=False)
     env.reset()
 
     my_policy = PolicyIteration(env)
     my_policy.policy_improvement()
     my_policy.play_game()
     my_policy.print_rewards_info(num_episodes=10)
-
-
-# policy, V = improve_policy(env.env)
-# play_game(env, policy)
-
-# print(policy, V)
