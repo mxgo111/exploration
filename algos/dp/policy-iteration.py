@@ -30,7 +30,7 @@ class PolicyIteration:
         #   s_0 : { a_0 : pi(a_0|s_0), a_1 : pi(a_1|s_0), ..., a_m : pi(a_m|s_0) }
         #   ...
         #   s_n : { a_0 : pi(a_0|s_n), a_1 : pi(a_1|s_n), ..., a_m : pi(a_m|s_n) }
-        # }
+        # } 
         policy = {}
         for key in range(0, self.num_states):
             p = {}
