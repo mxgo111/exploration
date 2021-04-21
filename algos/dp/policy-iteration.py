@@ -8,7 +8,7 @@ import numpy as np
 
 import sys
 sys.path.append('/Users/mxgo/rl/code/exploration/envs')
-# print(sys.path)
+
 from frozen_lake import FrozenLakeEnv
 
 random.seed(99)
@@ -37,13 +37,7 @@ class PolicyIteration:
     def update_values(self, state):
         v = 0
         action = self.policy[state]
-        # print("action", action)
         for prob, next_state, reward, end in self.env.P[state][action]:
-            # print("STRT HELLOO")
-            # print(state_prob, next_state, reward, end)
-            # print("HELLO")
-            # if reward > 0:
-            #     print("POSITIVE REWARD")
             v += prob * (reward + self.gamma * self.V[next_state])
         return v
 
@@ -52,7 +46,6 @@ class PolicyIteration:
         action_values = np.zeros(self.num_actions)
         for action in range(self.num_actions):
             for prob, next_state, reward, end in self.env.P[state][action]:
-                # print(prob)
                 action_values[action] += prob * (reward + self.gamma * self.V[next_state])
         return action_values
 
@@ -68,13 +61,9 @@ class PolicyIteration:
             # check if sum of V's is within theta of previous
             # deviates a little from Sutton-Barto
             delta = np.amax(np.abs(self.V - new_V))
-            # print(delta)
+
+            # values have converged
             if delta < theta:
-                # print("my V")
-                # print(self.V[self.V>0])
-                # print("end my V")
-                # print(i)
-                print("Convergence of values")
                 return
             else:
                 self.V = new_V
@@ -84,7 +73,6 @@ class PolicyIteration:
         evals = 1
         # ensures that we stop even if we don't converge
         for i in range(int(terms)):
-            # print(i)
             stable = True
             self.policy_evaluation()
             for state in range(self.num_states):
@@ -92,26 +80,12 @@ class PolicyIteration:
                 action_values = self.update_action_values(state)
                 best_actions = np.argwhere(action_values == np.amax(action_values)).flatten()
 
-                # print("BESST ACTIONS")
-                # print(best_actions)
-                # print("END BEST ACTION")
-
                 # actions have changed -> unstable
                 if self.policy[state] not in best_actions:
                     stable = False
-                    # print("what state rip", state)
                     self.policy[state] = np.random.choice(best_actions)
 
-                # if np.abs(action_values[self.policy[state]] - np.amax(action_values)) > 0.01:
-                #     stable = False
-                #     # print("what state rip", state)
-                #     self.policy[state] = np.random.choice(best_actions)
-
-                # print(self.policy)
                 evals += 1
-
-            # if i == 100:
-            #     import sys; sys.exit()
 
             if stable:
                 return
@@ -170,9 +144,7 @@ class PolicyIteration:
         print(f"Mean of Episode Rewards: {mean}, Variance of Episode Rewards: {var}, Best Episode Reward: {best}")
 
 if __name__ == "__main__":
-    # import sys; print(sys.path); sys.exit()
     # env = gym.make('FrozenLake-v0', is_slippery=False)
-    # env = gym.make('FrozenLake3x3-v0')
     # env = FrozenLakeEnv(map_name="4x4", is_slippery=True)
     # env = FrozenLakeEnv(map_name="16x16", is_slippery=True)
     env = gym.make('Taxi-v3')
@@ -181,6 +153,5 @@ if __name__ == "__main__":
 
     my_policy = PolicyIteration(env, gamma=0.9)
     my_policy.policy_improvement()
-    # print(my_policy.policy)
     my_policy.play_game()
     my_policy.print_rewards_info(num_episodes=1000)
