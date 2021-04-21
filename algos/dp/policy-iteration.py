@@ -16,36 +16,23 @@ class PolicyIteration:
         self.env = env
         self.num_states = env.observation_space.n
         self.num_actions = env.action_space.n
-        if policy:
-            self.policy = policy
-        else:
-            self.policy = self.create_random_policy()
+        self.policy = policy if policy else self.create_random_policy()
         self.V = np.zeros(self.num_states)
         self.gamma = gamma
 
     # Creates initial random policy
     def create_random_policy(self):
-        # policy is of the form:
-        # {
-        #   s_0 : { a_0 : pi(a_0|s_0), a_1 : pi(a_1|s_0), ..., a_m : pi(a_m|s_0) }
-        #   ...
-        #   s_n : { a_0 : pi(a_0|s_n), a_1 : pi(a_1|s_n), ..., a_m : pi(a_m|s_n) }
-        # } 
-        policy = {}
-        for key in range(0, self.num_states):
-            p = {}
-            for action in range(0, self.num_actions):
-                p[action] = 1 / self.num_actions
-            policy[key] = p
+        # policy is num_states * num_actions array
+        policy = np.ones((self.num_states, self.num_actions)) / self.num_actions
         return policy
 
     # updates values for one state
     def update_values(self, state):
-        v = 0
-        for action, action_prob in self.policy[state].items():
+        v = 0.0
+        for action, action_prob in enumerate(self.policy[state]):
             for state_prob, next_state, reward, end in self.env.P[state][action]:
                 v += action_prob * state_prob * (reward + self.gamma * self.V[next_state])
-                self.V[state] = v
+        self.V[state] = v
 
     # def evaluate(V, action_values, env, gamma, state):
     #     for action in range(env.nA):
@@ -96,10 +83,11 @@ class PolicyIteration:
     #             if stable:
     #                 return policy, V
 
-    def policy_evaluation(self, theta=100, terms=1e6):
+    def policy_evaluation(self, theta=1e-9, terms=1e6):
+        self.V = np.zeros(self.num_states)
         # ensures that we stop even if we don't converge
+        prev_sum = 0
         for i in range(int(terms)):
-            prev_sum = 0
             for state in range(self.num_states):
                 self.update_values(state)
             # check if sum of V's is within theta of previous
@@ -119,15 +107,14 @@ class PolicyIteration:
             stable = True
             self.policy_evaluation()
             for state in range(self.num_states):
-                current_action = max(self.policy[state], key=self.policy[state].get)
+                current_action = np.argmax(self.policy[state])
                 action_values = self.update_best_actions(state)
                 best_action = np.argmax(action_values)
 
                 # actions have changed -> unstable
                 if current_action != best_action:
                     stable = False
-                    for action in policy[state]:
-                        self.policy[state][action] = 0
+                    self.policy[state] = np.zeros(self.num_actions)
                     self.policy[state][best_action] = 1
                 evals += 1
 
@@ -144,7 +131,7 @@ class PolicyIteration:
             if display:
                 clear_output(True)
                 self.env.render()
-                # sleep(1)
+                sleep(1)
 
             timestep = []
             timestep.append(s)
@@ -156,8 +143,7 @@ class PolicyIteration:
             #     if n < top_range:
             #         action = i
             #         break
-            action = random.choices(self.policy[s].keys(), weights=self.policy[s].values())
-
+            action = np.random.choice(np.arange(self.num_actions), p=self.policy[s])
             state, reward, finished, info = self.env.step(action)
 
             timestep.append(action)
@@ -168,8 +154,26 @@ class PolicyIteration:
         if display:
             clear_output(True)
             self.env.render()
-    #         sleep(0.1)
         return episodes
+
+    def compute_episode_rewards(self, num_episodes=100, step_limit=1000):
+        total_rewards = np.zeros(num_episodes)
+        for episode in range(num_episodes):
+            self.env.reset()
+            finished = False
+            num_steps = 0
+            while not finished and num_steps < step_limit:
+                s = self.env.env.s
+                action = np.random.choice(np.arange(self.num_actions), p=self.policy[s])
+                state, reward, finished, info = self.env.step(action)
+                total_rewards[episode] += reward
+                num_steps += 1
+
+        return np.mean(total_rewards), np.var(total_rewards)
+
+    def print_rewards_info(self, num_episodes=100, step_limit=1000):
+        mean, var = self.compute_episode_rewards(num_episodes=num_episodes, step_limit=step_limit)
+        print(f"Mean of Episode Rewards: {mean}, Variance of Episode Rewards: {var}")
 
 if __name__ == "__main__":
     env = gym.make('FrozenLake-v0')
@@ -178,6 +182,8 @@ if __name__ == "__main__":
     my_policy = PolicyIteration(env)
     my_policy.policy_improvement()
     my_policy.play_game()
+    my_policy.print_rewards_info(num_episodes=10)
+
 
 # policy, V = improve_policy(env.env)
 # play_game(env, policy)
