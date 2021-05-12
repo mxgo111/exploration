@@ -12,105 +12,77 @@ sys.path.append('/Users/mxgo/rl/code/exploration/envs')
 
 from frozen_lake import FrozenLakeEnv
 
-class MonteCarloOnPolicyEspSoft:
+class SARSA:
     """
-    Algorithm for First-Visit Monte Carlo with Epsilon Soft
+    Algorithm for the On-policy TD method SARSA
     """
 
     # Initialize policy, environment, value table (V)
-    def __init__(self, env, policy=None, gamma=1.0):
+    def __init__(self, env, gamma=1.0, alpha=0.1, epsilon=0.01):
         self.env = env
         self.num_states = env.observation_space.n
         self.num_actions = env.action_space.n
-        self.policy = policy if policy else self.create_random_policy()
 
         # Without model, states alone not sufficient -> requires action-values
         self.Q = np.zeros((self.num_states, self.num_actions))
-        self.N = np.zeros((self.num_states, self.num_actions))
 
         self.gamma = gamma
+        self.alpha = alpha
+        self.epsilon = epsilon
 
-    # Creates random policy
-    def create_random_policy(self):
-        # policy is (num_states * num_actions) array (probabilistic)
-        policy = np.ones((self.num_states, self.num_actions)) / self.num_actions
-        return policy
+    # choose action from Q-values based on epsilon-greedy
+    def choose_action(self, state):
+        if np.random.uniform() < self.epsilon:
+            return np.random.choice(np.arange(self.num_actions))
+        else:
+            best_actions = np.argwhere(self.Q[state] == np.amax(self.Q[state])).flatten()
+            return np.random.choice(best_actions)
 
-    # perform monte carlo with epsilon soft policy
-    def monte_carlo(self, epsilon=0.01, num_episodes=10000, interval=1000):
+    # perform sarsa with epsilon greedy policy
+    def sarsa(self, num_episodes=10000, interval=1000, display=False, step_limit=10000):
         mean_returns = []
         for e in range(1,num_episodes+1):
-            epsilon = min(0.01, 100/(e+1))
-            G = 0
-            episode = self.play_game(display=False)
-            episode_state_actions = [(x[0], x[1]) for x in episode]
+            self.epsilon = min(0.01, 100/(e+1))
+            self.alpha = min(0.1, 1000/(e+1))
+            self.env.reset()
+            finished = False
+
+            curr_state = self.env.s
+            num_steps = 0
+
+            action = self.choose_action(curr_state)
+            while not finished and num_steps < step_limit:
+                # display current state
+                if display:
+                    system('clear')
+                    clear_output(True)
+                    self.env.render()
+                    sleep(1)
+
+                # take a step
+                next_state, reward, finished, info = self.env.step(action)
+
+                # choose next action based on epsilon greedy policy
+                next_action = self.choose_action(next_state)
+
+                # update Q valuess
+                self.Q[curr_state][action] = self.Q[curr_state][action] + \
+                                             self.alpha * (reward + \
+                                                           self.gamma * self.Q[next_state][next_action] - \
+                                                           self.Q[curr_state][action])
+
+                num_steps += 1
+                curr_state = next_state
+                action = next_action
 
             # run tests every interval episodes
             if e % interval == 0:
                 mean, var, best = self.compute_episode_rewards(num_episodes=100)
                 mean_returns.append(mean)
 
-            for t in reversed(range(len(episode))):
-                s_t, a_t, r_t = episode[t]
-                state_action = (s_t, a_t)
-                G = self.gamma * G + r_t
-
-                # using first visits
-                if not state_action in episode_state_actions[:t]:
-                    self.N[s_t][a_t] += 1
-                    self.Q[s_t][a_t] += (1/self.N[s_t][a_t]) * (G - self.Q[s_t][a_t])
-
-                    best_actions = np.argwhere(self.Q[s_t] == np.amax(self.Q[s_t])).flatten()
-                    best_action = np.random.choice(best_actions)
-
-                    self.policy[s_t] = np.ones(self.num_actions) * epsilon/self.num_actions
-                    self.policy[s_t][best_action] = 1 - epsilon + epsilon/self.num_actions
-
         plt.plot(np.arange(interval, num_episodes+1, interval), mean_returns)
-        plt.savefig("on-policy-eps-soft")
+        plt.savefig("sarsa")
         plt.show()
-
-    # run an episode and record state, action, reward info
-    def play_game(self, display=True, step_limit=10000):
-        self.env.reset()
-        episode = []
-        finished = False
-
-        curr_state = self.env.s
-        total_reward = 0
-        num_steps = 0
-
-        while not finished and num_steps < step_limit:
-            # display current state
-            if display:
-                system('clear')
-                clear_output(True)
-                self.env.render()
-                sleep(1)
-
-            n = random.uniform(0, sum(self.policy[curr_state]))
-            top_range = 0
-            action = 0
-            for i, prob in enumerate(self.policy[curr_state]):
-                top_range += prob
-                if n < top_range:
-                    action = i
-                    break
-
-            next_state, reward, finished, info = self.env.step(action)
-            total_reward += reward
-            episode.append([curr_state, action, reward])
-            num_steps += 1
-            curr_state = next_state
-
-        # display end result
-        if display:
-            system('clear')
-            clear_output(True)
-            self.env.render()
-            print(f"Total Reward from this run: {total_reward}")
-
-        return episode
 
     # averages rewards over a number of episodes
     def compute_episode_rewards(self, num_episodes=100, step_limit=1000):
@@ -121,7 +93,7 @@ class MonteCarloOnPolicyEspSoft:
             num_steps = 0
             curr_state = self.env.s
             while not finished and num_steps < step_limit:
-                action = np.argmax(self.policy[curr_state])
+                action = self.choose_action(curr_state)
                 curr_state, reward, finished, info = self.env.step(action)
                 total_rewards[episode] += reward
                 num_steps += 1
@@ -133,11 +105,11 @@ class MonteCarloOnPolicyEspSoft:
 if __name__ == "__main__":
     # env = gym.make('FrozenLake-v0', is_slippery=False)
     # env = FrozenLakeEnv(map_name="2x2", is_slippery=False)
-    env = FrozenLakeEnv(map_name="8x8", is_slippery=False)
+    env = FrozenLakeEnv(map_name="8x8", is_slippery=True)
     # env = FrozenLakeEnv(map_name="16x16", is_slippery=True)
     # env = gym.make('Taxi-v3')
     print("num states", env.nS)
     env.reset()
 
-    my_policy = MonteCarloOnPolicyEspSoft(env, gamma=0.9)
-    my_policy.monte_carlo(num_episodes=50000)
+    my_policy = SARSA(env, gamma=0.9, alpha=0.1, epsilon=0.01)
+    my_policy.sarsa(num_episodes=50000)

@@ -1,0 +1,7 @@
+SARSA:
+- modifying alpha changes the results by a LOT (increased from 0.1 ish at around 50000 iterations to 0.5 ish at around 50000 iterations with a simple adjustment)
+- based on Sutton Barto page 130
+
+Q-learning:
+- based on Sutton Barto page 131
+- increasing alpha a bit increased the results (more rigorous study needed)

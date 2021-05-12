@@ -9,9 +9,7 @@ import numpy as np
 import sys
 sys.path.append('/Users/mxgo/rl/code/exploration/envs')
 
-from frozen_lake import FrozenLakeEnv
-
-random.seed(99)
+from frozen_lake import FrozenLakeEnvs
 
 class PolicyIteration:
     """
