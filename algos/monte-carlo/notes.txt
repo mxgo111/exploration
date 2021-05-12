@@ -1,0 +1,6 @@
+For epsilon-soft, we implemented Sutton-Barto's On-policy first-visit MC control on page 101
+Currently, it appears to be working for FrozenLake, with both is_slippery=True or is_slippery=False
+
+Observations:
+- For FrozenLake, is_slippery=True, on some runs it seems to be the case that the program takes a while
+before it obtains positive reward, but this is a relatively uncommon occurrence.

@@ -196,3 +196,10 @@ class FrozenLakeEnv(discrete.DiscreteEnv):
         if mode != 'human':
             with closing(outfile):
                 return outfile.getvalue()
+
+    # possible custom reset to start from different states
+    def reset(self):
+        self.s = discrete.categorical_sample(self.isd, self.np_random)
+        # self.s = np.random.choice(range(self.nS))
+        self.lastaction = None
+        return int(self.s)

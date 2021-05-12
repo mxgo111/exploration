@@ -58,8 +58,7 @@ class PolicyIteration:
             new_V = np.zeros(self.num_states)
             for state in range(self.num_states):
                 new_V[state] = self.update_values(state)
-            # check if sum of V's is within theta of previous
-            # deviates a little from Sutton-Barto
+
             delta = np.amax(np.abs(self.V - new_V))
 
             # values have converged
@@ -144,10 +143,10 @@ class PolicyIteration:
         print(f"Mean of Episode Rewards: {mean}, Variance of Episode Rewards: {var}, Best Episode Reward: {best}")
 
 if __name__ == "__main__":
-    # env = gym.make('FrozenLake-v0', is_slippery=False)
+    env = gym.make('FrozenLake-v0', is_slippery=False)
     # env = FrozenLakeEnv(map_name="4x4", is_slippery=True)
     # env = FrozenLakeEnv(map_name="16x16", is_slippery=True)
-    env = gym.make('Taxi-v3')
+    # env = gym.make('Taxi-v3')
     print("num states", env.nS)
     env.reset()
 

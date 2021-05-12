@@ -40,14 +40,14 @@ class ValueIteration:
         return action_values
 
     # Value iteration
-    def value_iteration(theta=1e-9, terms=1e9):
+    def value_iteration(self, theta=1e-9, terms=1e9):
         for i in range(int(terms)):
             delta = 0
             for state in range(self.num_states):
                 action_values = self.update_action_values(state)
                 best_action_value = np.max(action_values)
-                delta = max(delta, np.abs(V[state] - best_action_value))
-                V[state] = best_action_value
+                delta = max(delta, np.abs(self.V[state] - best_action_value))
+                self.V[state] = best_action_value
             # convergence of values
             if delta < theta:
                 break
@@ -113,13 +113,13 @@ class ValueIteration:
 
 if __name__ == "__main__":
     # env = gym.make('FrozenLake-v0', is_slippery=False)
-    # env = FrozenLakeEnv(map_name="4x4", is_slippery=True)
+    env = FrozenLakeEnv(map_name="2x2", is_slippery=False)
     # env = FrozenLakeEnv(map_name="16x16", is_slippery=True)
-    env = gym.make('Taxi-v3')
+    # env = gym.make('Taxi-v3')
     print("num states", env.nS)
     env.reset()
 
-    my_policy = PolicyIteration(env, gamma=0.9)
+    my_policy = ValueIteration(env, gamma=0.9)
     my_policy.value_iteration()
     my_policy.play_game()
     my_policy.print_rewards_info(num_episodes=1000)
