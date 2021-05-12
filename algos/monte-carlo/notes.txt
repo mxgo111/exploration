@@ -1,6 +1,12 @@
+For exploring starts, we implemented Sutton-Barto's MC Exploring Starts on page 99
+
 For epsilon-soft, we implemented Sutton-Barto's On-policy first-visit MC control on page 101
-Currently, it appears to be working for FrozenLake, with both is_slippery=True or is_slippery=False
+
+Currently, both appear to be working for FrozenLake, with both is_slippery=True or is_slippery=False
+However, epsilon-soft seems to converge faster?
+We implemented the incremental means version for both.
 
 Observations:
-- For FrozenLake, is_slippery=True, on some runs it seems to be the case that the program takes a while
-before it obtains positive reward, but this is a relatively uncommon occurrence.
+- For FrozenLake and epsilon-soft, is_slippery=True, on some runs it seems to be
+the case that the program takes a while before it obtains positive reward, but
+this is a relatively uncommon occurrence.

@@ -14,7 +14,7 @@ from frozen_lake import FrozenLakeEnv
 
 class MonteCarloOnPolicyEspSoft:
     """
-    Algorithm for Monte Carlo with Exploring Starts
+    Algorithm for First-Visit Monte Carlo with Epsilon Soft
     """
 
     # Initialize policy, environment, value table (V)
@@ -37,11 +37,8 @@ class MonteCarloOnPolicyEspSoft:
         return policy
 
     # perform monte carlo with epsilon soft policy
-    def monte_carlo(self, epsilon=0.01, num_episodes=10000, test_policy_freq=1000):
-        returns = {}
+    def monte_carlo(self, epsilon=0.01, num_episodes=10000, interval=1000):
         mean_returns = []
-        interval = 1000
-
         for e in range(1,num_episodes+1):
             epsilon = min(0.01, 100/(e+1))
             G = 0
@@ -136,7 +133,7 @@ class MonteCarloOnPolicyEspSoft:
 if __name__ == "__main__":
     # env = gym.make('FrozenLake-v0', is_slippery=False)
     # env = FrozenLakeEnv(map_name="2x2", is_slippery=False)
-    env = FrozenLakeEnv(map_name="8x8", is_slippery=True)
+    env = FrozenLakeEnv(map_name="8x8", is_slippery=False)
     # env = FrozenLakeEnv(map_name="16x16", is_slippery=True)
     # env = gym.make('Taxi-v3')
     print("num states", env.nS)

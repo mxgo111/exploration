@@ -32,7 +32,10 @@ class MonteCarloExploringStarts:
     # Creates random policy
     def create_random_policy(self):
         # policy is num_states array (deterministic)
+        # policy[i] is action number that is taken in state i
         policy = np.zeros(self.num_states, dtype=int)
+        for i in range(self.num_states):
+            policy[i] = np.random.choice(np.arange(self.num_actions))
         return policy
 
     # perform monte carlo with exploring starts
@@ -46,36 +49,19 @@ class MonteCarloExploringStarts:
 
             if e % 1000 == 0:
                 self.print_rewards_info(num_episodes=100)
-                print(self.Q)
-                print(self.policy)
-                # import sys; sys.exit()
 
             for t in reversed(range(len(episode))):
                 s_t, a_t, r_t = episode[t]
-                # if s_t == 14 and a_t == 2:
-                #     print("HAHAH")
-                # if r_t > 0:
-                #     print(s_t, a_t, r_t)
                 state_action = (s_t, a_t)
                 G = self.gamma * G + r_t
 
                 # using first visits
                 if not state_action in episode_state_actions[:t]:
-                    if returns.get(state_action):
-                        returns[state_action].append(G)
-                    else:
-                        returns[state_action] = [G]
-
-                    self.Q[s_t][a_t] = sum(returns[state_action]) / len(returns[state_action])
+                    self.N[s_t][a_t] += 1
+                    self.Q[s_t][a_t] += (1/self.N[s_t][a_t]) * (G - self.Q[s_t][a_t])
 
                     best_actions = np.argwhere(self.Q[s_t] == np.amax(self.Q[s_t])).flatten()
                     self.policy[s_t] = np.random.choice(best_actions)
-
-                    # self.N[s_t,a_t] += 1
-                    # self.Q[s_t,a_t] += (G - self.Q[s_t,a_t])/self.N[s_t,a_t]
-
-                    # best_actions = np.argwhere(self.Q[s_t] == np.amax(self.Q[s_t])).flatten()
-                    # self.policy[s_t] = np.random.choice(best_actions)
 
     def play_game(self, display=True, step_limit=100):
         self.env.reset()
@@ -83,7 +69,6 @@ class MonteCarloExploringStarts:
         finished = False
 
         curr_state = self.env.s
-        # print(self.env.s)
         total_reward = 0
         num_steps = 0
 
@@ -98,16 +83,13 @@ class MonteCarloExploringStarts:
             # find next state
             if not episode:
                 action = np.random.choice(range(self.num_actions))
-                # print("HELLO")
             else:
                 action = self.policy[curr_state]
-            curr_state, reward, finished, info = self.env.step(action)
+            next_state, reward, finished, info = self.env.step(action)
             total_reward += reward
             episode.append([curr_state, action, reward])
-            # print("in progress")
             num_steps += 1
-
-        # print("finished")
+            curr_state = next_state
 
         # display end result
         if display:
@@ -143,13 +125,10 @@ if __name__ == "__main__":
     # env = gym.make('FrozenLake-v0', is_slippery=False)
     # env = FrozenLakeEnv(map_name="2x2", is_slippery=False)
     # env = FrozenLakeEnv(map_name="4x4", is_slippery=False)
-    # env = FrozenLakeEnv(map_name="16x16", is_slippery=True)
-    env = gym.make('Taxi-v3')
+    env = FrozenLakeEnv(map_name="8x8", is_slippery=True)
+    # env = gym.make('Taxi-v3')
     print("num states", env.nS)
     env.reset()
 
     my_policy = MonteCarloExploringStarts(env, gamma=0.9)
-    my_policy.monte_carlo_exploring_starts(num_episodes=10000)
-    # print(my_policy.Q)
-    # my_policy.play_game()
-    my_policy.print_rewards_info(num_episodes=1000)
+    my_policy.monte_carlo_exploring_starts(num_episodes=50000)

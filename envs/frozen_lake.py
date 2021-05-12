@@ -129,6 +129,7 @@ class FrozenLakeEnv(discrete.DiscreteEnv):
 
         nA = 4
         nS = nrow * ncol
+        self.nS = nS
 
         isd = np.array(desc == b'S').astype('float64').ravel()
         isd /= isd.sum()
@@ -199,7 +200,7 @@ class FrozenLakeEnv(discrete.DiscreteEnv):
 
     # possible custom reset to start from different states
     def reset(self):
-        self.s = discrete.categorical_sample(self.isd, self.np_random)
-        # self.s = np.random.choice(range(self.nS))
+        # self.s = discrete.categorical_sample(self.isd, self.np_random)
+        self.s = np.random.choice(range(self.nS))
         self.lastaction = None
         return int(self.s)
