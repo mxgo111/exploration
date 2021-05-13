@@ -5,3 +5,7 @@ SARSA:
 Q-learning:
 - based on Sutton Barto page 131
 - increasing alpha a bit increased the results (more rigorous study needed)
+- results vary a lot depending on what trial
+
+TODOs:
+- Double Q-learning? I'm not sure that FrozenLake is a good example for demonstrating maximization bias though

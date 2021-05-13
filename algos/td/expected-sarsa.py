@@ -11,11 +11,10 @@ import sys
 sys.path.append('/Users/mxgo/rl/code/exploration/envs')
 
 from frozen_lake import FrozenLakeEnv
-from taxi import TaxiEnv
 
-class Q_Learning:
+class Expected_SARSA:
     """
-    Algorithm for the Off-policy TD method Q-learning
+    Algorithm for the TD method Expected SARSA On-policy version (can be on or off policy in general)
     """
 
     # Initialize policy, environment, value table (V)
@@ -39,8 +38,15 @@ class Q_Learning:
             best_actions = np.argwhere(self.Q[state] == np.amax(self.Q[state])).flatten()
             return np.random.choice(best_actions)
 
-    # perform sarsa with epsilon greedy policy
-    def q_learning(self, num_episodes=10000, interval=1000, display=False, step_limit=10000):
+    # find expected value for expected SARSA update calculation
+    # on-policy (epsilon-greedy)
+    def expected_value(self, state):
+        value = sum(self.epsilon/self.num_actions * self.Q[state][action] for action in np.arange(self.num_actions))
+        value += (1 - self.epsilon) * np.amax(self.Q[state])
+        return value
+
+    # perform expected sarsa with epsilon greedy policy
+    def expected_sarsa(self, num_episodes=10000, interval=1000, display=False, step_limit=10000):
         mean_returns = []
         for e in range(1,num_episodes+1):
             self.epsilon = min(0.01, 100/(e+1))
@@ -51,7 +57,7 @@ class Q_Learning:
             curr_state = self.env.s
             num_steps = 0
 
-
+            action = self.choose_action(curr_state)
             while not finished and num_steps < step_limit:
                 # display current state
                 if display:
@@ -60,20 +66,21 @@ class Q_Learning:
                     self.env.render()
                     sleep(1)
 
-                # choose action
-                action = self.choose_action(curr_state)
-
                 # take a step
                 next_state, reward, finished, info = self.env.step(action)
 
-                # update Q values
+                # choose next action based on epsilon greedy policy
+                next_action = self.choose_action(next_state)
+
+                # update Q valuess
                 self.Q[curr_state][action] = self.Q[curr_state][action] + \
                                              self.alpha * (reward + \
-                                                           self.gamma * np.amax(self.Q[next_state]) - \
+                                                           self.gamma * self.expected_value(next_state) - \
                                                            self.Q[curr_state][action])
 
                 num_steps += 1
                 curr_state = next_state
+                action = next_action
 
             # run tests every interval episodes
             if e % interval == 0:
@@ -81,7 +88,7 @@ class Q_Learning:
                 mean_returns.append(mean)
 
         plt.plot(np.arange(interval, num_episodes+1, interval), mean_returns)
-        plt.savefig("q_learning")
+        plt.savefig("expected_sarsa")
         plt.show()
 
     # averages rewards over a number of episodes
@@ -105,12 +112,11 @@ class Q_Learning:
 if __name__ == "__main__":
     # env = gym.make('FrozenLake-v0', is_slippery=False)
     # env = FrozenLakeEnv(map_name="2x2", is_slippery=False)
-    # env = FrozenLakeEnv(map_name="8x8", is_slippery=True)
+    env = FrozenLakeEnv(map_name="8x8", is_slippery=True)
     # env = FrozenLakeEnv(map_name="16x16", is_slippery=True)
-    env = gym.make('Taxi-v3')
-    # env = TaxiEnv()
+    # env = gym.make('Taxi-v3')
     print("num states", env.nS)
     env.reset()
 
-    my_policy = Q_Learning(env, gamma=0.9, alpha=0.05, epsilon=0.001)
-    my_policy.q_learning(num_episodes=50000)
+    my_policy = Expected_SARSA(env, gamma=0.9, alpha=0.1, epsilon=0.01)
+    my_policy.expected_sarsa(num_episodes=50000)

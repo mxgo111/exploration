@@ -7,6 +7,16 @@ import numpy as np
 
 MAP = [
     "+---------+",
+    "|R: : : :G|",
+    "| : : : : |",
+    "| : : : : |",
+    "| : : : : |",
+    "|Y: : : :B|",
+    "+---------+",
+]
+
+MAP_OG = [
+    "+---------+",
     "|R: | : :G|",
     "| : | : : |",
     "| : : : : |",
@@ -14,7 +24,6 @@ MAP = [
     "|Y| : |B: |",
     "+---------+",
 ]
-
 
 class TaxiEnv(discrete.DiscreteEnv):
     """
@@ -70,7 +79,7 @@ class TaxiEnv(discrete.DiscreteEnv):
     def __init__(self):
         self.desc = np.asarray(MAP, dtype='c')
 
-        self.locs = locs = [(0, 0), (0, 4), (4, 0), (4, 3)]
+        self.locs = locs = [(0, 0), (0, 4), (4, 0), (4, 4)]
 
         num_states = 500
         num_rows = 5
@@ -86,8 +95,9 @@ class TaxiEnv(discrete.DiscreteEnv):
                 for pass_idx in range(len(locs) + 1):  # +1 for being inside taxi
                     for dest_idx in range(len(locs)):
                         state = self.encode(row, col, pass_idx, dest_idx)
-                        if pass_idx < 4 and pass_idx != dest_idx:
-                            initial_state_distrib[state] += 1
+                        # random initialization
+                        # if pass_idx < 4 and pass_idx != dest_idx:
+                        #     initial_state_distrib[state] += 1
                         for action in range(num_actions):
                             # defaults
                             new_row, new_col, new_pass_idx = row, col, pass_idx
@@ -121,7 +131,9 @@ class TaxiEnv(discrete.DiscreteEnv):
                                 new_row, new_col, new_pass_idx, dest_idx)
                             P[state][action].append(
                                 (1.0, new_state, reward, done))
-        initial_state_distrib /= initial_state_distrib.sum()
+        # for random initialization
+        # initial_state_distrib /= initial_state_distrib.sum()
+        initial_state_distrib[self.encode(0, 0, 1, 2)] = 1
         discrete.DiscreteEnv.__init__(
             self, num_states, num_actions, P, initial_state_distrib)
 

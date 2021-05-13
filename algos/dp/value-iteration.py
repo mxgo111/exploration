@@ -10,6 +10,7 @@ import sys
 sys.path.append('/Users/mxgo/rl/code/exploration/envs')
 
 from frozen_lake import FrozenLakeEnv
+from taxi import TaxiEnv
 
 class ValueIteration:
     """
@@ -72,7 +73,7 @@ class ValueIteration:
                 system('clear')
                 clear_output(True)
                 self.env.render()
-                sleep(1)
+                sleep(0.5)
 
             # find next state
             # s = self.env.env.s
@@ -113,9 +114,10 @@ class ValueIteration:
 
 if __name__ == "__main__":
     # env = gym.make('FrozenLake-v0', is_slippery=False)
-    env = FrozenLakeEnv(map_name="2x2", is_slippery=False)
+    # env = FrozenLakeEnv(map_name="2x2", is_slippery=False)
     # env = FrozenLakeEnv(map_name="16x16", is_slippery=True)
     # env = gym.make('Taxi-v3')
+    env = TaxiEnv()
     print("num states", env.nS)
     env.reset()
 
