@@ -1,7 +1,7 @@
 """
 A Classic: DQN applied to Atari
 Source Code: https://becominghuman.ai/lets-build-an-atari-ai-part-1-dqn-df57e8ff3b26
-jk this doesn't work
+CURRENTLY INCOMPLETE
 """
 
 # Import the gym module
